@@ -1,0 +1,24 @@
+{
+  "name": "deeplearning-langchain",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "this is a repository for deeplearning.ai build llms with langchain course practice",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "langchain",
+    "deeplearning",
+    "llm",
+    "rag"
+  ],
+  "author": "taimoorkhan1122",
+  "license": "ISC",
+  "dependencies": {
+    "@langchain/core": "^0.2.27",
+    "@langchain/openai": "^0.2.7",
+    "dotenv": "^16.4.5",
+    "langchain": "^0.2.16"
+  }
+}
