@@ -33,4 +33,9 @@ await promptTemplate.formatMessages({
 })
 
 
+const chain = promptTemplate.pipe(model);
+const response = await chain.invoke({animal: 'cat'});
+
+console.log(response);
+
 
