@@ -1,3 +1,4 @@
+This is a practice repository for course *build LLMs with langchain.js* offered by [deeplearning.ai](deeplearning.ai)
 ## Language model
 1. Text LLMs: string -> string
 2. Chat models: list of messages -> single message output
@@ -24,3 +25,8 @@ This is a standard interface, which makes it easy to define custom chains as wel
   - **stream**: stream back chunks of the response
   - **invoke**: call the chain on an input
   - **batch**: call the chain on an array of inputs
+
+## RAG (Retrieval Augmented Generation)
+
+![RAG flow image](image.png)
+source: [build LLMS with langchain.js](https://learn.deeplearning.ai/courses/build-llm-apps-with-langchain-js/lesson/1/introduction)
