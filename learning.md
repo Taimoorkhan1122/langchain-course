@@ -41,6 +41,4 @@ Important parameters to know here are chunkSize and chunkOverlap. chunkSize cont
 ## Vector Stores
 A vector store is a specialized type of  database with natural language search capabilities. 
 
-In AI, vectors are mathematical points that represents data in a format that is understandable by AI algorithms. Vectors are lists (or arrays) of numbers where each number represents a specific feature or attribute of the data. They are stored in vector stores and are used in vector databases.  [basics - vector stores](https://www.mongodb.com/resources/basics/vector-stores)
-
-Ingestions - [learn more about this]
+In AI, vectors are mathematical points that represents data in a format that is understandable by AI algorithms. Vectors are lists (or arrays) of numbers where each number represents a specific feature or attribute of the data. They are stored in vector stores and are used in vector databases. learn more [basics - vector stores](https://www.mongodb.com/resources/basics/vector-stores)
