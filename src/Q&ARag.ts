@@ -5,9 +5,13 @@ import { RunnableSequence, RunnableMap } from "@langchain/core/runnables";
 import { ChatPromptTemplate } from "@langchain/core/prompts";
 import { StringOutputParser } from "@langchain/core/output_parsers";
 import { ChatOpenAI } from "@langchain/openai";
+import { MessagesPlaceholder } from "@langchain/core/prompts";
+import { RunnablePassthrough } from "@langchain/core/runnables";
+import { RunnableWithMessageHistory } from "@langchain/core/runnables";
+import { ChatMessageHistory } from "langchain/stores/message/in_memory";
 
 // split document in appropriate chunk size
-const splitDocs = await loadAndSplitChunk({ chunkSize: 1536, chunkOverlap: 125 });
+const splitDocs = await loadAndSplitChunk({ chunkSize: 1536, chunkOverlap: 128 });
 // create embedding for splitted docs
 const vectorStore = await initializeVectorstoreWithDocuments(splitDocs);
 // convert the vector store as  expression language chainable
@@ -63,14 +67,102 @@ const runnableMap = RunnableMap.from({
 });
 
 const retrievalChain = RunnableSequence.from([
-  runnableMap,
+  {
+    context: documentRetrievalChain,
+    question: (input: any) => input.question,
+  },
   answerGenerationPrompt,
   model,
   new StringOutputParser(),
 ]);
 
-const response = await retrievalChain.invoke({
-  question: "Name one machine learning algorithm",
+// const response = await retrievalChain.invoke({
+//   question: "what are prerequisite for this course?",
+// });
+
+// const followUp = await retrievalChain.invoke({
+//   question: "can you list them in bullet points form?",
+// });
+
+// console.log({ response, followUp });
+
+// ==== Adding History ====
+
+const REPHRASE_QUESTION_SYSTEM_TEMPLATE = `Given the following conversation and a follow up question, 
+rephrase the follow up question to be a standalone question.`;
+
+const rephraseQuestionChainPrompt = ChatPromptTemplate.fromMessages([
+  ["system", REPHRASE_QUESTION_SYSTEM_TEMPLATE],
+  new MessagesPlaceholder("history"),
+  ["human", "Rephrase the following question as a standalone question:\n{question}"],
+]);
+
+// rephrase the given question an generate a standalone question.
+const rephraseQuestionChain = RunnableSequence.from([
+  rephraseQuestionChainPrompt,
+  new ChatOpenAI({ temperature: 0.1, modelName: "gpt-3.5-turbo-1106" }),
+  new StringOutputParser(),
+]);
+
+const ANSWER_CHAIN_SYSTEM_TEMPLATE = `You are an experienced researcher, 
+expert at interpreting and answering questions based on provided sources.
+Using the below provided context and chat history, 
+answer the user's question to the best of 
+your ability 
+using only the resources provided. Be verbose!
+
+<context>
+{context}
+</context>`;
+
+const answerGenerationChainPrompt = ChatPromptTemplate.fromMessages([
+  ["system", ANSWER_CHAIN_SYSTEM_TEMPLATE],
+  new MessagesPlaceholder("history"),
+  [
+    "human",
+    "Now, answer this question using the previous context and chat history:\n{standalone_question}",
+  ],
+]);
+
+const conversationalRetrievalChain = RunnableSequence.from([
+  RunnablePassthrough.assign({
+    standalone_question: rephraseQuestionChain,
+  }),
+  RunnablePassthrough.assign({
+    context: documentRetrievalChain,
+  }),
+  answerGenerationChainPrompt,
+  new ChatOpenAI({ modelName: "gpt-3.5-turbo" }),
+  new StringOutputParser(),
+]);
+
+const messageHistory = new ChatMessageHistory();
+
+const finalRetrievalChain = new RunnableWithMessageHistory({
+  runnable: conversationalRetrievalChain,
+  getMessageHistory: (_sessionId) => messageHistory,
+  historyMessagesKey: "history",
+  inputMessagesKey: "question",
 });
 
-console.log(response);
+const originalQuestion = "What are the prerequisites for this course?";
+
+const originalAnswer = await finalRetrievalChain.invoke(
+  {
+    question: originalQuestion,
+  },
+  {
+    configurable: { sessionId: "test" },
+  }
+);
+
+const finalAnswer = await finalRetrievalChain.invoke(
+  {
+    question: "Can you list them in bullet point form?",
+  },
+  {
+    configurable: { sessionId: "test" },
+  }
+);
+
+console.log({originalAnswer, finalAnswer})
